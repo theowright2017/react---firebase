@@ -1,5 +1,3 @@
-/* eslint no-undef: 0 */ // --> OFF
-
 import React, {Component} from 'react';
 import logo from './logo.svg';
 import './App.css';
@@ -7,7 +5,7 @@ import * as firebase from 'firebase/app';
 import Firebase from './firebase/firebase.js';
 import 'firebase/database';
 import AccountComponent from './Components/AccountComponent';
-import Popup from './Components/Popup';
+
 
 
 
@@ -21,9 +19,10 @@ class App extends Component {
                    users: [],
                    fullObject: [],
                    loaded: false,
-                   showModal: false
+                   rating: ""
 
     };
+
 
   }
 
@@ -38,7 +37,6 @@ class App extends Component {
 
 
     usersRef.on('child_added', snapshot => {
-      // console.log(snapshot.val());
       let user = {
         id: snapshot.key,
         name: snapshot.val().name,
@@ -68,36 +66,27 @@ class App extends Component {
       this.setState({
         accounts: [account].concat(this.state.accounts)
       });
-      console.log(this.state.accounts);
 
 
       this.setState({
         loaded: true
       })
-    // this.renderUserAccount()
+
     this.mergeAccountAndUser()
 
 })}
 
 
-  // async renderUserAccount() {
-  //
-  //   let result = await this.resolveAsync();
-  //   // console.log(result);
-  // }
-
-
-
   mergeAccountAndUser() {
     // wait for pull from database for ? seconds
     return new Promise(resolve => {
-      setTimeout(() => {
+      // setTimeout(() => {
 
           ////////////////////////////////////////////////////
           ////////////////////////////////////////////////////
           // merge correct account title with its relevant user
-          let objectArray = []
-          let object = {}
+          // let objectArray = []
+          // let object = {}
           let userArray = this.state.users
           let accountArray = this.state.accounts
 
@@ -105,73 +94,83 @@ class App extends Component {
           // let accountObject = {...accountArray}
 
           // use nested for loop to check every instance of accounts against each individual instance of users.  if any account id matches that user id, assign that account title to object.title and push to array
-          for ( let i = 0, j = userArray.length; i < j; i++) {
-            for ( let c = 0, d = accountArray.length; c < d; c++) {
-              object = {
-                id: userArray[i].account,
-                name: userArray[i].name,
-                title: "",
-                rating: ""
-              }
+          // for ( let i = 0, j = userArray.length; i < j; i++) {
+          //   for ( let c = 0, d = accountArray.length; c < d; c++) {
+          //     object = {
+          //       id: userArray[i].account,
+          //       name: userArray[i].name,
+          //       title: "",
+          //       rating: ""
+          //     }
+          //
+          //     if ( userArray[i].account === accountArray[c].id) {
+          //       // console.log(this.state.users[i].account + this.state.accounts[c].id + "yes");
+          //       object.title = accountArray[c].title.title
+          //
+          //     }
+          //
+          //     if (object.title !== ""){
+          //       objectArray.push(object)
+          //
+          //     }
+          //
+          //   }
+          //
+          // }
 
-              if ( userArray[i].account === accountArray[c].id) {
-                // console.log(this.state.users[i].account + this.state.accounts[c].id + "yes");
-                object.title = accountArray[c].title.title
 
-              }
+        // use reduce to call the following function on each element in user array,
+        // if an id element of account array matches the account element of user array, save to variable called matchedAccount
+        //if matchedAccount exists, push to new array
+        // set new array to as mergedList
+        const mergedList = userArray.reduce((array, user) => {
+          const matchedAccount = accountArray.find(a => a.id === user.account);
 
-              if (object.title !== ""){
-                objectArray.push(object)
-
-              }
-
-            }
-
+          if (matchedAccount) {
+            array.push({
+              id: user.account,
+              name: user.name,
+              title: matchedAccount.title.title,
+              rating: ''
+            })
           }
 
+          return array;
+        }, []);
+
           this.setState( {
-            fullObject: objectArray
+            fullObject: mergedList
           })
-          // console.log(this.state.accounts);
-          // console.log(this.state.users);
 
-          console.log(this.state.fullObject);
-          ////////////////////////////////////////////////////
-          ////////////////////////////////////////////////////
-          ////////////////////////////////////////////////////
-
-
-        }, 1)
-
+        // }, 2000)
       })
-
   }
 
-  handleAddRating(index, e) {
-    e.preventDefault();
-
-    let rating = window.prompt("Enter your rating")
-    this.handleShowModal()
 
 
+  changeRating = (newRating) => {
+    this.setState({
+      rating: newRating
+    });
+  }
+
+
+
+  handleAddRating(e, index) {
 
       firebase.database().ref('accounts')
       .child(this.state.fullObject[index].id)
       .child('apps')
       .child('zz_rating')
       .update(
-          {'rating': rating});
-
+          {'rating': this.state.rating});
 
 }
 
-  handleShowModal() {
-    this.setState( { showModal: !this.state.showModal } )
-  }
-  handleCloseModal(e) {
-    this.setState( { showModal: !this.state.showModal } )
-    console.log(this.state.showModal);
-  }
+
+
+
+
 
 
 
@@ -181,24 +180,13 @@ class App extends Component {
       return <AccountComponent
               eachObject={each}
               key={index}
-              openModal={(e) =>
-                this.handleAddRating(index, e)}
-              closeModal={(e) =>
-                this.handleCloseModal(e)}
+              rating={this.state.fullObject[index].rating}
+              changeRating={this.changeRating}
+              addRating={(e) =>
+              this.handleAddRating(e, index)}
               />
-    });
-
-    // const Modal = () => {
-    //   return <Popup
-    //           closeModal1={(e) =>
-    //           this.handleCloseModal(e)}
-    //           >
-    //           <span> content</span>
-    //         </Popup>
-    // }
-
-
-
+          }
+    );
 
     if (this.state.loaded === true) {
       return (
