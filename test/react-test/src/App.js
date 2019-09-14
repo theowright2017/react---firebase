@@ -6,7 +6,7 @@ import './App.css';
 import * as firebase from 'firebase/app';
 import Firebase from './firebase/firebase.js';
 import 'firebase/database';
-import AccountComponent from './Accounts/AccountComponent'
+import AccountComponent from './Components/AccountComponent'
 
 
 
@@ -15,10 +15,11 @@ import AccountComponent from './Accounts/AccountComponent'
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { ratings: [],
-                   accounts: [],
+    this.state = { accounts: [],
                    users: [],
-                   fullObject: []
+                   fullObject: [],
+                   loaded: false,
+                   showModal: false
 
     };
 
@@ -32,20 +33,6 @@ class App extends Component {
     let usersRef = firebase.database().ref('users');
 
     //for each element of collection, update when a new element is found, provide a snapshot of each, and perform action on each element
-
-
-    ratingsRef.on('child_added', snapshot => {
-      // Update React state when element is added to Firebase Database
-
-      let rating = {
-        rating: snapshot.val(),
-        id: snapshot.key
-      };
-      this.setState({
-        ratings: [rating].concat(this.state.ratings) });
-      })
-
-
 
 
     usersRef.on('child_added', snapshot => {
@@ -67,7 +54,7 @@ class App extends Component {
       // title takes the first value of that object
       let obj = snapshot.val().apps
       let title = Object.values(obj)[0]
-      let rating = snapshot.val().apps.rating
+      let rating = Object.values(obj)[1]
       let account = {
         id: snapshot.key,
         apps: obj,
@@ -78,29 +65,16 @@ class App extends Component {
       this.setState({
         accounts: [account].concat(this.state.accounts)
       });
+      console.log(this.state.accounts);
 
 
+      this.setState({
+        loaded: true
+      })
     // this.renderUserAccount()
-    this.resolveAsync()
+    this.mergeAccountAndUser()
 
 })}
-
-
-
-
-
-
-  addRating(e){
-    e.preventDefault(); // <- prevent form submit from reloading the page
-    /* Send the message to Firebase */
-    firebase.database().ref('ratings').push(
-      'TITLE: ' + this.titleInput.value +
-      ' RATING: ' + this.scoreInput.value);
-
-    this.titleInput.value = ''; // <- clear the input
-    this.scoreInput.value = '';
-  }
-
 
 
   // async renderUserAccount() {
@@ -111,7 +85,7 @@ class App extends Component {
 
 
 
-  resolveAsync() {
+  mergeAccountAndUser() {
     // wait for pull from database for ? seconds
     return new Promise(resolve => {
       setTimeout(() => {
@@ -121,18 +95,26 @@ class App extends Component {
           // merge correct account title with its relevant user
           let objectArray = []
           let object = {}
+          let userArray = this.state.users
+          let accountArray = this.state.accounts
+
+          // let userObject = {...userArray}
+          // let accountObject = {...accountArray}
+
           // use nested for loop to check every instance of accounts against each individual instance of users.  if any account id matches that user id, assign that account title to object.title and push to array
-          for ( let i = 0; i < this.state.users.length; i++) {
-            for ( let c = 0; c < this.state.users.length; c++) {
+          for ( let i = 0, j = userArray.length; i < j; i++) {
+            for ( let c = 0, d = userArray.length; c < d; c++) {
               object = {
-                id: this.state.users[i].account,
-                name: this.state.users[i].name,
-                title: ""
+                id: userArray[i].account,
+                name: userArray[i].name,
+                title: "",
+                rating: ""
               }
 
-              if ( this.state.users[i].account === this.state.accounts[c].id){
+              if ( userArray[i].account === accountArray[c].id) {
                 // console.log(this.state.users[i].account + this.state.accounts[c].id + "yes");
-                object.title = this.state.accounts[c].title.title
+                object.title = accountArray[c].title.title
+                object.rating = accountArray[c].rating
               }
 
               if (object.title !== ""){
@@ -142,14 +124,13 @@ class App extends Component {
 
             }
 
-
-
           }
 
           this.setState( {
             fullObject: objectArray
           })
-
+          // console.log(this.state.accounts);
+          // console.log(this.state.users);
           ////////////////////////////////////////////////////
           ////////////////////////////////////////////////////
           ////////////////////////////////////////////////////
@@ -161,12 +142,31 @@ class App extends Component {
 
   }
 
-  handleAddRating(index) {
-    console.log("clicked " + index);
+  handleAddRating(index, e) {
+    e.preventDefault();
+
     let rating = window.prompt("Enter your rating")
-    console.log(index + " " + rating);
-    console.log(this.state.fullObject[index].title);
+    this.handleShowModal()
+    console.log(this.state.showModal);
+
+    firebase.database().ref('accounts')
+    .child(this.state.fullObject[index].id)
+    .child('apps')
+    .child('zz_rating')
+    .push(
+        {'rating': rating});
+
+        console.log(this.state.fullObject[index].rating);
   }
+
+  handleShowModal() {
+    this.setState( { showModal: !this.state.showModal } )
+  }
+  handleCloseModal(e) {
+    this.setState( { showModal: !this.state.showModal } )
+    console.log(this.state.showModal);
+  }
+
 
 
   render() {
@@ -175,48 +175,35 @@ class App extends Component {
       return <AccountComponent
               eachObject={each}
               key={index}
-              clicked={() =>
-                this.handleAddRating(index)}
+              openModal={(e) =>
+                this.handleAddRating(index, e)}
+              closeModal={(e) =>
+                this.handleCloseModal(e)}
               />
     });
 
 
 
-    return (
-      <div>
-        <form onSubmit={this.addRating.bind(this)}>
-          <input type="text"
-                 ref={ el => this.titleInput = el }
-                 placeholder="title"/>
 
-          <input type="text"
-                 ref={ element => this.scoreInput = element }
-                 placeholder="rating"/>
+    if (this.state.loaded === true) {
+      return (
+        <div>
 
-          <input type="submit"/>
+          {accountList}
 
-        </form>
+        </div>
+      )
+    } else {
 
-        {accountList}
+      return (
 
+        <h3 className="loading"> Loading......</h3>
 
-
-
-
-
-      </div>
-    )
+      )
+    }
 
   }
 }
 
 
 export default App;
-//
-// <ul>
-//   {
-//     this.state.fullObject.map( each =>
-//     <li key={each.id}>{each.id} --- {each.name} --- {each.title}</li>)
-//   }
-//
-// </ul>

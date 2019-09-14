@@ -15,9 +15,12 @@ const accountComponent = (props) => {
 };
 
   return (
-    <div style={style} onClick={props.clicked}>
+    <div style={style} >
       <li key={props.eachObject.id}> <b>{props.eachObject.id}</b> --- {props.eachObject.name}
-        --- {props.eachObject.title}</li>
+        --- {props.eachObject.title} ---
+      <button onClick={props.openModal} > Add Rating </button>
+    </li>
+    <button onClick={props.closeModal}> close</button>
     </div>
   )
 }
