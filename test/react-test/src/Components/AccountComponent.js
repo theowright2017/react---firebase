@@ -14,13 +14,25 @@ const accountComponent = (props) => {
   backgroundColor: '#FFEFD5'
 };
 
+  const size = {
+    width: "4em"
+  }
+
   return (
     <div style={style} >
       <li key={props.eachObject.id}> <b>{props.eachObject.id}</b> --- {props.eachObject.name}
         --- {props.eachObject.title} ---
-      <button onClick={props.openModal} > Add Rating </button>
+      <form>
+      <input style={size} type="number"
+        min="1" max="5" name="rating"
+        onChange={(event) => props.changeRating(event.target.value)}
+        />
+
+
+      <button onClick="this.form.reset()"  onClick={props.addRating}  > Add Rating </button>
+      </form>
+
     </li>
-    <button onClick={props.closeModal}> close</button>
     </div>
   )
 }
