@@ -6,7 +6,9 @@ import './App.css';
 import * as firebase from 'firebase/app';
 import Firebase from './firebase/firebase.js';
 import 'firebase/database';
-import AccountComponent from './Components/AccountComponent'
+import AccountComponent from './Components/AccountComponent';
+import Popup from './Components/Popup';
+
 
 
 
@@ -62,6 +64,7 @@ class App extends Component {
         rating: rating
       };
 
+
       this.setState({
         accounts: [account].concat(this.state.accounts)
       });
@@ -103,7 +106,7 @@ class App extends Component {
 
           // use nested for loop to check every instance of accounts against each individual instance of users.  if any account id matches that user id, assign that account title to object.title and push to array
           for ( let i = 0, j = userArray.length; i < j; i++) {
-            for ( let c = 0, d = userArray.length; c < d; c++) {
+            for ( let c = 0, d = accountArray.length; c < d; c++) {
               object = {
                 id: userArray[i].account,
                 name: userArray[i].name,
@@ -114,7 +117,7 @@ class App extends Component {
               if ( userArray[i].account === accountArray[c].id) {
                 // console.log(this.state.users[i].account + this.state.accounts[c].id + "yes");
                 object.title = accountArray[c].title.title
-                object.rating = accountArray[c].rating
+
               }
 
               if (object.title !== ""){
@@ -131,6 +134,8 @@ class App extends Component {
           })
           // console.log(this.state.accounts);
           // console.log(this.state.users);
+
+          console.log(this.state.fullObject);
           ////////////////////////////////////////////////////
           ////////////////////////////////////////////////////
           ////////////////////////////////////////////////////
@@ -147,17 +152,18 @@ class App extends Component {
 
     let rating = window.prompt("Enter your rating")
     this.handleShowModal()
-    console.log(this.state.showModal);
 
-    firebase.database().ref('accounts')
-    .child(this.state.fullObject[index].id)
-    .child('apps')
-    .child('zz_rating')
-    .push(
-        {'rating': rating});
 
-        console.log(this.state.fullObject[index].rating);
-  }
+
+      firebase.database().ref('accounts')
+      .child(this.state.fullObject[index].id)
+      .child('apps')
+      .child('zz_rating')
+      .update(
+          {'rating': rating});
+
+
+}
 
   handleShowModal() {
     this.setState( { showModal: !this.state.showModal } )
@@ -182,6 +188,15 @@ class App extends Component {
               />
     });
 
+    // const Modal = () => {
+    //   return <Popup
+    //           closeModal1={(e) =>
+    //           this.handleCloseModal(e)}
+    //           >
+    //           <span> content</span>
+    //         </Popup>
+    // }
+
 
 
 
@@ -190,6 +205,8 @@ class App extends Component {
         <div>
 
           {accountList}
+
+
 
         </div>
       )
